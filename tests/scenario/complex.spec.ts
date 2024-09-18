@@ -1,4 +1,4 @@
-import { flex } from "../../src/flex";
+import { flex } from "../../src/index";
 
 describe("complex structures", function () {
   it("flex() can handle layers of nested functions", () => {

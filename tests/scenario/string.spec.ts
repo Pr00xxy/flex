@@ -1,4 +1,4 @@
-import {flex} from "../../src/flex";
+import {flex} from "../../src/index";
 
 describe("string tests", () => {
     it("should be possible to use string value as literals", () => {

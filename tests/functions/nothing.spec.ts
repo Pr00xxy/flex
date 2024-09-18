@@ -1,4 +1,4 @@
-import { flex } from "../../src/flex";
+import { flex } from "../../src/index";
 
 describe("nothing", function () {
   it("should return null", function () {

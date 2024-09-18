@@ -1,4 +1,4 @@
-import { flex } from "../../src/flex";
+import { flex } from "../../src/index";
 
 describe("concat", () => {
   it("should return the argument if no other arguments were passed", () => {

@@ -1,16 +1,25 @@
-# Flex
+<p align="center">
+  <h1 align="center">✨ Flex ✨</h1>
+  <p align="center">
+    Javascript code as configuration
+  </p>
+</p>
+<p align="center">
+<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/github/license/Pr00xxy/flex" alt="License"></a>
+</p>
 
-Or Flexible Expression Engine. I spent way too much time on the naming and it doesn't even make sense
+# Disclaimer
+This repository is just a proof of concept, I give no guarantee of consistensy nor support should you attempt to use this. It's purely done for theoretical and academical purposes.
 
 ## Introduction
 
-It's what you get if you breed a programming language with a configuration language.
-It's a pretentiously named complex data mapper library.
+Flex, or "Flexible Expression Engine". I spent way too much time on the naming and it doesn't even make sense
 
-## Problem i tried solving
+It's a pretentiously named data mapper library made for typescript, mostly just a proof of concept.
 
-Mapping one object onto another based on a configuration is a simple task
-Example of a rudimentary mapping logic could be as follows:
+Object conversion between systems is easy with code, harder with config.
+
+Example of a rudimentary conversion logic could be as follows:
 ```ts
 // 1. We have a source object
 const sourceObj = {
@@ -26,7 +35,7 @@ const targetObj = {
 
 // 3. We have a mapping
 const mappingConfig = {
-    // source_field: 'target_field'
+    // source_field -> 'target_field'
     name: 'fullName',
     age: 'yearsOld',
 };
@@ -37,10 +46,11 @@ for (const [sourceKey, targetKey] of Object.entries(mappingConfig)) {
 }
 
 // 5. We have a mapped object
-console.log(targetObj); // { fullName: 'Alice', yearsOld: 30 }
+console.log(targetObj);
+// { fullName: 'Alice', yearsOld: 30 }
 ```
 
-Performing more complex mapping are impossible. Take the following example:
+Performing more complex conversions are impossible. Take the following example:
 ```ts
 const sourceObj = {
     firstName: 'Jane',
@@ -54,12 +64,8 @@ const targetObj = {
 };
 ```
 
-Due to the difference in data structure in how these objects handle the object names its impossible to perform a purely static mapping like the other example above.
-
 In a normal scenarios you might be inclined to implement some custom logic so that `firstName` + " " + `LastName` gets mapped to `fullName` on the target object.
 But if this mapping changes between tenants or users, it cannot be hardcoded, it must be dynamic
-
-This is where `flex` comes into play.
 
 ## Solution
 
@@ -92,10 +98,13 @@ The following is the most basic usage of flex.
 1. Function are prefixed with @, there must be one root function
 2. Function arguments can be either literal strings, jsonpath or more nested functions
 ```ts
+import { flex } from "@pr00xxy/flex"
+
 const myObject = {
     foo: "foo",
     bar: "bar",
 };
+
 const concatResult = flex("@concat(@space(), 'hello','world')", testObject);
 // concatResult = "hello world"
 ```
@@ -119,7 +128,7 @@ The mapping for `fullName` is now a flex string that can be safely stored in a d
 Flex strings are only executable by flex and no actual code is stored.
 
 ## Functions
-This section is WIP
+The following is a list of the build in functions and their features
 
 ### @concat
 
@@ -133,7 +142,9 @@ const result = flex("@concat(@space(),$.field_1,$.field_2)", myObject);
 ```
 
 ### @join
-join two arguments together to an array
+Join two arguments together to an array
+
+Joining strings results in an array of said strings
 ```ts
 const data = {
     field_1: "one",
@@ -142,6 +153,16 @@ const data = {
 const query = "@join($.field_1, $.field_2)";
 const result = flex(query, data);
 // result = ["one", "two"]
+```
+Joining two arrays results in a single array of all items
+```ts
+const data = {
+  field_1: ["one", "two"],
+  field_2: ["three", "four"],
+};
+const query = "@join($.field_1, $.field_2)";
+const result = flex(query, data);
+// result = ["one", "two", "three", "four"]
 ```
 Attempting to join two arrays will merge the arrays
 ```ts

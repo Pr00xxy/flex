@@ -1,4 +1,4 @@
-import { flex } from "../../src/flex";
+import { flex } from "../../src/index";
 
 describe("join", function () {
   /**
@@ -25,6 +25,21 @@ describe("join", function () {
     const query = "@join($.field_1, $.field_2)";
     const result = flex(query, data);
     expect(result).toStrictEqual(["one", "two", "three", "four"]);
+  });
+
+  /**
+   * given a string and string array, should return a new array with said string and all elements from the array
+   * Should persist order
+   * Should keep duplicates
+   */
+  it("Should join string and array into a single array", function () {
+    const data = {
+      field_1: "one",
+      field_2: ["one", "two"],
+    };
+    const query = "@join($.field_1, $.field_2)";
+    const result = flex(query, data);
+    expect(result).toStrictEqual(["one", "one", "two"]);
   });
 
   /**

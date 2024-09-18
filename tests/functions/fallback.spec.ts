@@ -1,4 +1,4 @@
-import { flex } from "../../src/flex";
+import { flex } from "../../src/index";
 
 describe("fallback", () => {
   it("@fallback() should return the first value that exists", () => {
