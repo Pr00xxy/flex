@@ -60,12 +60,14 @@ const sourceObj = {
 
 const targetObj = {
     fullName: '',
-    yearsOld: 0,
+    yearsOld: '',
 };
 ```
 
-In a normal scenarios you might be inclined to implement some custom logic so that `firstName` + " " + `LastName` gets mapped to `fullName` on the target object.
-But if this mapping changes between tenants or users, it cannot be hardcoded, it must be dynamic
+Maybe you might be inclined to implement some custom logic so that `firstName` + " " + `LastName` gets mapped to `fullName` on the target object.
+This is however not possible in a couple of scenarios:
+1. If, during runtime, the mapping should vary based on tenant/user
+2. If the mapping needs to be changeable without code changes
 
 ## Solution
 
@@ -76,14 +78,14 @@ Flex is a propriatary configuration language-ish thing allowing developers to ru
 fields in a secure way.
 
 ### Security
-I think it's suitable to have this section first, as running unknown arbitrary strings as code is a nono. So let me explain.
+I think it's suitable to have this section first, as running unknown arbitrary strings as code is a no-no. So let me explain.
 
-Flex is not javascript nor does it execute arbitrary strings as code.
-Flex utilizes [jsonpath](https://github.com/json-path/JsonPath) to locate object fields and a proprietary syntax to execute a set of predefined (or user defined) functions.
+Flex does not use eval, nor does it actually execute arbitrary strings during runtime in an insecure way.
+Flex utilizes [jsonpath](https://github.com/json-path/JsonPath) to locate object fields and a proprietary syntax to execute a set of predefined (or user defined) functions on the values that jsonpath locates.
 
 Flex only parses a "function-like" syntax and tries to locate known functions from a predefined dictionary. Thus it can only execute known functions provided to it.
 
-For utmost security, one may limit flex to only be able to execute functions of ones own making.
+To ensure security, one may limit flex to only be able to execute functions of ones own making.
 
 Flex is nothing more than a strategy pattern.
 
@@ -92,7 +94,8 @@ Flex is nothing more than a strategy pattern.
 Flex exposes two apis, `flex()` and `flexSafe()`
 
 `flex()` allows usage of the basic built in functions from this library
-`flexSafe()` requires the user to provide their own functions, built in functions are disabled. This is the recommended approach.
+`flexSafe()` requires the user to provide their own functions, built in functions are disabled.
+This is the recommended approach.
 
 The following is the most basic usage of flex.
 1. Function are prefixed with @, there must be one root function
@@ -101,11 +104,11 @@ The following is the most basic usage of flex.
 import { flex } from "@pr00xxy/flex"
 
 const myObject = {
-    foo: "foo",
-    bar: "bar",
+    foo: "hello",
+    bar: "world",
 };
 
-const concatResult = flex("@concat(@space(), 'hello','world')", testObject);
+const concatResult = flex("@concat(@space(), $.foo,$.bar)", testObject);
 // concatResult = "hello world"
 ```
 
@@ -118,27 +121,45 @@ const sourceObj = {
     age: 30,
 }
 
+const myMap = {
+    fullName: "@concat(@space(), $.firstName, $.lastName)",
+    yearsOld: "@concat(@space(), $.age, ' years old')"
+}
+
 const targetObj = {
-    fullName: flex("@concat(@space(), $.firstName, $.lastName)", sourceObj),
-    yearsOld: sourceObj['age'],
+    fullName: flex(myMap['fullName'], sourceObj),
+    yearsOld: flex(myMap['fullName'], sourceObj),
 };
-// targetObj = { fullName: "Jane Doe", yearsOld: 30 }
+// targetObj = { fullName: "Jane Doe", yearsOld: "30 years old" }
 ```
-The mapping for `fullName` is now a flex string that can be safely stored in a database or configuration table for on demand use.
+The mapping for `fullName` and `yearsOld` are now flex strings that can be safely stored in a database or configuration file for on demand use.
+
+And as explained earlier, these strings are only interpretable by flex.
 Flex strings are only executable by flex and no actual code is stored.
 
 ## Functions
 The following is a list of the build in functions and their features
 
 ### @concat
+concatenates all arguments into a string, delimited by the string passed as the first argument
 
 ```ts
-const myObject = {
+const data = {
     field_1: "hello",
     field_2: "world",
 };
-const result = flex("@concat(@space(),$.field_1,$.field_2)", myObject);
+const result = flex("@concat(@space(),$.field_1,$.field_2)", data);
 // result = "hello world"
+```
+
+concat on multiple arrays unwpacks and concatenates all elements into a single string
+```ts
+const data = {
+  field_1: ["hello", "world"],
+  field_2: ["brown", "fox"],
+};
+const result = flex("@concat(@space(),$.field_1[*],$.field_2[*])", data);
+// result = "hello world brown fox"
 ```
 
 ### @join
@@ -150,8 +171,7 @@ const data = {
     field_1: "one",
     field_2: "two",
 };
-const query = "@join($.field_1, $.field_2)";
-const result = flex(query, data);
+const result = flex("@join($.field_1, $.field_2)", data);
 // result = ["one", "two"]
 ```
 Joining two arrays results in a single array of all items
@@ -160,8 +180,7 @@ const data = {
   field_1: ["one", "two"],
   field_2: ["three", "four"],
 };
-const query = "@join($.field_1, $.field_2)";
-const result = flex(query, data);
+const result = flex("@join($.field_1, $.field_2)", data);
 // result = ["one", "two", "three", "four"]
 ```
 Attempting to join two arrays will merge the arrays
@@ -170,9 +189,15 @@ const data = {
       field_1: ["one", "two"],
       field_2: ["three", "four"],
 };
-const query = "@join($.field_1, $.field_2)";
-const result = flex(query, data);
+const result = flex("@join($.field_1, $.field_2)", data);
 // result = ["one", "two", "three", "four"]
 ```
-
-
+## @fallback
+takes n number of arguments, returns the first key found
+```ts
+const data = {
+  field_2: "world",
+};
+const result = flex("@fallback($.field_1,$.field_2)", fallbackObject);
+// result = "world"
+```
