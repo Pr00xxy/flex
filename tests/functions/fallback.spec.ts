@@ -36,10 +36,16 @@ describe("fallback", () => {
     expect(result).toStrictEqual([{ key: 1 }, { key: 2 }]);
   });
   it("@fallback() should be compatible with @space and @nothing", () => {
-    const fallbackObject = {
-      bar: "world",
-    };
+    const fallbackObject = {};
     const result = flex("@fallback(@nothing(),@space())", fallbackObject);
     expect(result).toStrictEqual(" ");
+  });
+  it("@fallback() should return first object even if undefined", () => {
+    const fallbackObject = {
+      field_1: undefined,
+      field_2: "value!"
+    };
+    const result = flex("@fallback($.field_1,$.field_2)", fallbackObject);
+    expect(result).toStrictEqual(undefined);
   });
 });
